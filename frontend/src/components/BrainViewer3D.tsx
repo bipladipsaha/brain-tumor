@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RotateCw, RefreshCw, Eye, EyeOff, Layers } from 'lucide-react';
+import { RotateCw, RefreshCw, Eye, EyeOff, Layers, Palette } from 'lucide-react';
 
 interface MeshData {
   vertices: number[][];
@@ -23,6 +23,23 @@ interface BrainViewer3DProps {
   simplifiedMode?: boolean;
 }
 
+export interface ColorPreset {
+  id: string;
+  name: string;
+  hex: string;
+  colorValue: number;
+  emissive: number;
+}
+
+export const TUMOR_COLOR_PRESETS: ColorPreset[] = [
+  { id: 'amber', name: 'Amber Gold', hex: '#F59E0B', colorValue: 0xF59E0B, emissive: 0x332000 },
+  { id: 'coral', name: 'Sunset Coral', hex: '#F97316', colorValue: 0xF97316, emissive: 0x331400 },
+  { id: 'ruby', name: 'Ruby Crimson', hex: '#F43F5E', colorValue: 0xF43F5E, emissive: 0x330010 },
+  { id: 'cyan', name: 'Electric Cyan', hex: '#06B6D4', colorValue: 0x06B6D4, emissive: 0x00242B },
+  { id: 'violet', name: 'Amethyst Violet', hex: '#A855F7', colorValue: 0xA855F7, emissive: 0x220033 },
+  { id: 'emerald', name: 'Surgical Emerald', hex: '#10B981', colorValue: 0x10B981, emissive: 0x002615 },
+];
+
 export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
   meshes,
   loading,
@@ -36,12 +53,13 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
   
   // UI controls
   const [showBrain, setShowBrain] = useState(true);
-  const [brainOpacity, setBrainOpacity] = useState(0.20);
+  const [brainOpacity, setBrainOpacity] = useState(0.24);
   const [showWT, setShowWT] = useState(true);
   const [showTC, setShowTC] = useState(true);
   const [showET, setShowET] = useState(true);
   const [autoRotate, setAutoRotate] = useState(simplifiedMode);
   const [wireframe, setWireframe] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<ColorPreset>(TUMOR_COLOR_PRESETS[0]); // Amber Gold by default!
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -73,18 +91,18 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     controlsRef.current = controls;
 
     // Surgical Studio Lighting tailored to ELAN palette
-    const ambientLight = new THREE.AmbientLight(0xABAFB5, 0.9);
+    const ambientLight = new THREE.AmbientLight(0xABAFB5, 1.0);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xF1F5F9, 1.4);
+    const dirLight1 = new THREE.DirectionalLight(0xF1F5F9, 1.5);
     dirLight1.position.set(120, -150, 180);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x3B7E8C, 0.7);
+    const dirLight2 = new THREE.DirectionalLight(0x3B7E8C, 0.8);
     dirLight2.position.set(-150, 120, -80);
     scene.add(dirLight2);
 
-    const pointLight = new THREE.PointLight(0xF59E0B, 0.7, 300);
+    const pointLight = new THREE.PointLight(selectedColor.colorValue, 0.8, 300);
     pointLight.position.set(0, 0, 100);
     scene.add(pointLight);
 
@@ -166,16 +184,18 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     });
     meshesRef.current = {};
 
-    // 1. Brain Shell (Smooth Medical Glass Envelope matching #677E8A)
+    // 1. Brain Shell (Luminous Crystalline Glass Brain Envelope)
     if (meshes.brain_shell && !meshes.brain_shell.empty) {
       const geo = createGeometry(meshes.brain_shell);
       const mat = new THREE.MeshPhysicalMaterial({
-        color: 0x677E8A,
+        color: 0xCBD5E1,        // Platinum silver-ice
+        emissive: 0x122E34,     // Subtle deep surgical glow to delineate gyri
         transparent: true,
         opacity: brainOpacity,
-        roughness: 0.25,
-        metalness: 0.15,
-        clearcoat: 0.7,
+        roughness: 0.15,
+        metalness: 0.1,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
         side: THREE.DoubleSide,
         depthWrite: false,
         wireframe: wireframe,
@@ -186,15 +206,18 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
       meshesRef.current.brain_shell = mesh;
     }
 
-    // 2. Whole Tumor (WT - Jade Green)
+    // 2. Whole Tumor (WT / Primary Lesion in Patient View)
     if (meshes.whole_tumor && !meshes.whole_tumor.empty) {
       const geo = createGeometry(meshes.whole_tumor);
+      const tumorColor = simplifiedMode ? selectedColor.colorValue : 0x38BDF8;
+      const tumorEmissive = simplifiedMode ? selectedColor.emissive : 0x001525;
       const mat = new THREE.MeshStandardMaterial({
-        color: 0x10B981,
+        color: tumorColor,
+        emissive: tumorEmissive,
         transparent: true,
-        opacity: simplifiedMode ? 0.90 : 0.50,
-        roughness: 0.35,
-        metalness: 0.05,
+        opacity: simplifiedMode ? 0.95 : 0.40,
+        roughness: 0.2,
+        metalness: 0.15,
         side: THREE.DoubleSide,
         wireframe: wireframe,
       });
@@ -208,11 +231,12 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     if (meshes.tumor_core && !meshes.tumor_core.empty) {
       const geo = createGeometry(meshes.tumor_core);
       const mat = new THREE.MeshStandardMaterial({
-        color: 0xF59E0B,
+        color: selectedColor.colorValue,
+        emissive: selectedColor.emissive,
         transparent: true,
-        opacity: simplifiedMode ? 0.95 : 0.75,
-        roughness: 0.25,
-        metalness: 0.1,
+        opacity: simplifiedMode ? 0.95 : 0.80,
+        roughness: 0.2,
+        metalness: 0.15,
         side: THREE.DoubleSide,
         wireframe: wireframe,
       });
@@ -222,14 +246,15 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
       meshesRef.current.tumor_core = mesh;
     }
 
-    // 4. Enhancing Tumor (ET - Coral Red)
+    // 4. Enhancing Tumor (ET - Vivid Ruby Red)
     if (meshes.enhancing_tumor && !meshes.enhancing_tumor.empty) {
       const geo = createGeometry(meshes.enhancing_tumor);
       const mat = new THREE.MeshStandardMaterial({
         color: 0xEF4444,
+        emissive: 0x330000,
         transparent: false,
         opacity: 1.0,
-        roughness: 0.2,
+        roughness: 0.15,
         metalness: 0.2,
         side: THREE.DoubleSide,
         wireframe: wireframe,
@@ -239,7 +264,23 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
       scene.add(mesh);
       meshesRef.current.enhancing_tumor = mesh;
     }
-  }, [meshes, brainOpacity, wireframe]);
+  }, [meshes, brainOpacity, wireframe, selectedColor, simplifiedMode]);
+
+  // Update color dynamically on swatch change
+  useEffect(() => {
+    if (meshesRef.current.whole_tumor && simplifiedMode) {
+      const mat = meshesRef.current.whole_tumor.material as THREE.MeshStandardMaterial;
+      mat.color.setHex(selectedColor.colorValue);
+      mat.emissive.setHex(selectedColor.emissive);
+      mat.needsUpdate = true;
+    }
+    if (meshesRef.current.tumor_core && !simplifiedMode) {
+      const mat = meshesRef.current.tumor_core.material as THREE.MeshStandardMaterial;
+      mat.color.setHex(selectedColor.colorValue);
+      mat.emissive.setHex(selectedColor.emissive);
+      mat.needsUpdate = true;
+    }
+  }, [selectedColor, simplifiedMode]);
 
   useEffect(() => {
     if (meshesRef.current.brain_shell) {
@@ -328,7 +369,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
           </button>
 
           <div className="flex items-center gap-2 text-[#ABAFB5]">
-            <span className="text-[11px] font-medium">Transparency:</span>
+            <span className="text-[11px] font-medium hidden sm:inline">Outline:</span>
             <input
               type="range"
               min="0.05"
@@ -336,64 +377,88 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               step="0.05"
               value={brainOpacity}
               onChange={(e) => setBrainOpacity(parseFloat(e.target.value))}
-              className="w-20 h-1.5 bg-[#0E1D21] rounded-lg appearance-none cursor-pointer accent-[#3B7E8C]"
+              className="w-16 sm:w-20 h-1.5 bg-[#0E1D21] rounded-lg appearance-none cursor-pointer accent-[#3B7E8C]"
+              title="Brain Outline Transparency"
             />
           </div>
         </div>
 
-        {/* Right: Subregion Pills (Clinician Mode) or Clean Legend (Patient Mode) */}
-        {!simplifiedMode ? (
+        {/* Right: Color Palette Swatches & Subregion Pills */}
+        <div className="flex items-center gap-3">
+          {/* 3D Lesion Color Picker */}
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setShowWT(!showWT)}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
-                showWT
-                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800'
-                  : 'text-[#677E8A] border-[#244C56] opacity-60'
-              }`}
-            >
-              WT (Whole)
-            </button>
-            <button
-              onClick={() => setShowTC(!showTC)}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
-                showTC
-                  ? 'bg-amber-950/70 text-amber-300 border-amber-800'
-                  : 'text-[#677E8A] border-[#244C56] opacity-60'
-              }`}
-            >
-              TC (Core)
-            </button>
-            <button
-              onClick={() => setShowET(!showET)}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
-                showET
-                  ? 'bg-rose-950/70 text-rose-300 border-rose-800'
-                  : 'text-[#677E8A] border-[#244C56] opacity-60'
-              }`}
-            >
-              ET (Active)
-            </button>
-            <button
-              onClick={() => setWireframe(!wireframe)}
-              className={`p-1 rounded text-[11px] border ml-1 ${
-                wireframe
-                  ? 'bg-[#3B7E8C] text-white border-[#3B7E8C]'
-                  : 'text-[#677E8A] border-[#244C56]'
-              }`}
-              title="Toggle Mesh Wireframe"
-            >
-              <Layers className="w-3.5 h-3.5" />
-            </button>
+            <span className="text-[11px] text-[#677E8A] font-medium hidden md:inline">Shape Color:</span>
+            <div className="flex items-center gap-1.5 bg-[#0E1D21] px-2 py-1 rounded-lg border border-[#244C56]">
+              {TUMOR_COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => setSelectedColor(preset)}
+                  title={`Color: ${preset.name}`}
+                  className={`w-4 h-4 rounded-full transition-transform cursor-pointer border ${
+                    selectedColor.id === preset.id
+                      ? 'scale-125 border-white ring-2 ring-[#3B7E8C] shadow-sm'
+                      : 'border-transparent hover:scale-115 opacity-70 hover:opacity-100'
+                  }`}
+                  style={{ backgroundColor: preset.hex }}
+                />
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="flex items-center gap-3 text-[11px] text-[#ABAFB5] font-medium">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              Detected Lesion Area
-            </span>
-          </div>
-        )}
+
+          {!simplifiedMode ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowWT(!showWT)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                  showWT
+                    ? 'bg-sky-950/70 text-sky-300 border-sky-800'
+                    : 'text-[#677E8A] border-[#244C56] opacity-60'
+                }`}
+              >
+                WT (Edema)
+              </button>
+              <button
+                onClick={() => setShowTC(!showTC)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                  showTC
+                    ? 'bg-amber-950/70 text-amber-300 border-amber-800'
+                    : 'text-[#677E8A] border-[#244C56] opacity-60'
+                }`}
+              >
+                TC (Core)
+              </button>
+              <button
+                onClick={() => setShowET(!showET)}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
+                  showET
+                    ? 'bg-rose-950/70 text-rose-300 border-rose-800'
+                    : 'text-[#677E8A] border-[#244C56] opacity-60'
+                }`}
+              >
+                ET (Active)
+              </button>
+              <button
+                onClick={() => setWireframe(!wireframe)}
+                className={`p-1 rounded text-[11px] border ml-1 ${
+                  wireframe
+                    ? 'bg-[#3B7E8C] text-white border-[#3B7E8C]'
+                    : 'text-[#677E8A] border-[#244C56]'
+                }`}
+                title="Toggle Mesh Wireframe"
+              >
+                <Layers className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-[11px] text-[#ABAFB5] font-medium">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-colors"
+                style={{ backgroundColor: selectedColor.hex }}
+              />
+              <span className="text-[#F1F5F9] font-medium">{selectedColor.name}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Loading Overlay */}
