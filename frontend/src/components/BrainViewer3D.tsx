@@ -36,7 +36,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
   
   // UI controls
   const [showBrain, setShowBrain] = useState(true);
-  const [brainOpacity, setBrainOpacity] = useState(0.18);
+  const [brainOpacity, setBrainOpacity] = useState(0.20);
   const [showWT, setShowWT] = useState(true);
   const [showTC, setShowTC] = useState(true);
   const [showET, setShowET] = useState(true);
@@ -49,8 +49,8 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     const height = mountRef.current.clientHeight;
 
     const scene = new THREE.Scene();
-    // Clinical surgical neutral viewport (light clinical slate)
-    scene.background = new THREE.Color(0xf1f5f9);
+    // Deepest Midnight Teal background from ELAN palette (#0E1D21)
+    scene.background = new THREE.Color(0x0E1D21);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1500);
@@ -72,26 +72,26 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     controls.autoRotateSpeed = 1.0;
     controlsRef.current = controls;
 
-    // Surgical Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    // Surgical Studio Lighting tailored to ELAN palette
+    const ambientLight = new THREE.AmbientLight(0xABAFB5, 0.9);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    const dirLight1 = new THREE.DirectionalLight(0xF1F5F9, 1.4);
     dirLight1.position.set(120, -150, 180);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x94a3b8, 0.7);
+    const dirLight2 = new THREE.DirectionalLight(0x3B7E8C, 0.7);
     dirLight2.position.set(-150, 120, -80);
     scene.add(dirLight2);
 
-    const pointLight = new THREE.PointLight(0xf59e0b, 0.8, 300);
+    const pointLight = new THREE.PointLight(0xF59E0B, 0.7, 300);
     pointLight.position.set(0, 0, 100);
     scene.add(pointLight);
 
-    // Subtle anatomical base ring
+    // Subtle anatomical base ring in muted teal (#244C56)
     const ringGeo = new THREE.RingGeometry(60, 61.5, 64);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xcbd5e1,
+      color: 0x244C56,
       side: THREE.DoubleSide,
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -166,16 +166,16 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     });
     meshesRef.current = {};
 
-    // 1. Brain Shell (Smooth Medical Glass Envelope)
+    // 1. Brain Shell (Smooth Medical Glass Envelope matching #677E8A)
     if (meshes.brain_shell && !meshes.brain_shell.empty) {
       const geo = createGeometry(meshes.brain_shell);
       const mat = new THREE.MeshPhysicalMaterial({
-        color: 0x64748b,
+        color: 0x677E8A,
         transparent: true,
         opacity: brainOpacity,
         roughness: 0.25,
-        metalness: 0.1,
-        clearcoat: 0.6,
+        metalness: 0.15,
+        clearcoat: 0.7,
         side: THREE.DoubleSide,
         depthWrite: false,
         wireframe: wireframe,
@@ -190,33 +190,34 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     if (meshes.whole_tumor && !meshes.whole_tumor.empty) {
       const geo = createGeometry(meshes.whole_tumor);
       const mat = new THREE.MeshStandardMaterial({
-        color: 0x10b981,
+        color: 0x10B981,
         transparent: true,
-        opacity: 0.45,
+        opacity: simplifiedMode ? 0.90 : 0.50,
         roughness: 0.35,
         metalness: 0.05,
         side: THREE.DoubleSide,
         wireframe: wireframe,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.visible = simplifiedMode ? false : showWT;
+      mesh.visible = showWT;
       scene.add(mesh);
       meshesRef.current.whole_tumor = mesh;
     }
 
-    // 3. Tumor Core (TC - Amber)
+    // 3. Tumor Core (TC - Warm Amber)
     if (meshes.tumor_core && !meshes.tumor_core.empty) {
       const geo = createGeometry(meshes.tumor_core);
       const mat = new THREE.MeshStandardMaterial({
-        color: 0xd97706,
-        transparent: !simplifiedMode,
-        opacity: simplifiedMode ? 1.0 : 0.85,
-        roughness: 0.3,
+        color: 0xF59E0B,
+        transparent: true,
+        opacity: simplifiedMode ? 0.95 : 0.75,
+        roughness: 0.25,
+        metalness: 0.1,
         side: THREE.DoubleSide,
         wireframe: wireframe,
       });
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.visible = simplifiedMode ? true : showTC;
+      mesh.visible = simplifiedMode ? false : showTC;
       scene.add(mesh);
       meshesRef.current.tumor_core = mesh;
     }
@@ -225,9 +226,11 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
     if (meshes.enhancing_tumor && !meshes.enhancing_tumor.empty) {
       const geo = createGeometry(meshes.enhancing_tumor);
       const mat = new THREE.MeshStandardMaterial({
-        color: 0xdc2626,
-        roughness: 0.25,
-        metalness: 0.1,
+        color: 0xEF4444,
+        transparent: false,
+        opacity: 1.0,
+        roughness: 0.2,
+        metalness: 0.2,
         side: THREE.DoubleSide,
         wireframe: wireframe,
       });
@@ -236,25 +239,23 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
       scene.add(mesh);
       meshesRef.current.enhancing_tumor = mesh;
     }
-  }, [meshes, wireframe]);
+  }, [meshes, brainOpacity, wireframe]);
 
-  // Dynamic Opacity / Visibility updates without geometry rebuild
   useEffect(() => {
     if (meshesRef.current.brain_shell) {
       meshesRef.current.brain_shell.visible = showBrain;
-      (meshesRef.current.brain_shell.material as THREE.MeshPhysicalMaterial).opacity = brainOpacity;
     }
-  }, [showBrain, brainOpacity]);
+  }, [showBrain]);
 
   useEffect(() => {
     if (meshesRef.current.whole_tumor) {
-      meshesRef.current.whole_tumor.visible = simplifiedMode ? false : showWT;
+      meshesRef.current.whole_tumor.visible = showWT;
     }
-  }, [showWT, simplifiedMode]);
+  }, [showWT]);
 
   useEffect(() => {
     if (meshesRef.current.tumor_core) {
-      meshesRef.current.tumor_core.visible = simplifiedMode ? true : showTC;
+      meshesRef.current.tumor_core.visible = simplifiedMode ? false : showTC;
     }
   }, [showTC, simplifiedMode]);
 
@@ -272,16 +273,16 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
   };
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-300 shadow-xs">
+    <div className="relative w-full rounded-xl overflow-hidden bg-[#0E1D21] border border-[#244C56] shadow-lg">
       {/* 3D Canvas Frame */}
       <div ref={mountRef} className="w-full h-[400px] sm:h-[460px] cursor-grab active:cursor-grabbing" />
 
       {/* Clinical Anatomical Compass Badges */}
-      <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none text-[11px] font-semibold text-slate-600">
-        <span className="bg-white/90 shadow-xs px-2.5 py-1 rounded border border-slate-200">
+      <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none text-[11px] font-semibold text-[#ABAFB5]">
+        <span className="bg-[#122E34]/90 backdrop-blur-md px-2.5 py-1 rounded border border-[#244C56] shadow-sm">
           Anterior (A)
         </span>
-        <span className="bg-white/90 shadow-xs px-2.5 py-1 rounded border border-slate-200">
+        <span className="bg-[#122E34]/90 backdrop-blur-md px-2.5 py-1 rounded border border-[#244C56] shadow-sm">
           RAS Coordinates
         </span>
       </div>
@@ -291,10 +292,10 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
         <button
           onClick={() => setAutoRotate(!autoRotate)}
           title="Toggle Auto Rotation"
-          className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 transition cursor-pointer shadow-xs ${
+          className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 transition cursor-pointer shadow-sm ${
             autoRotate
-              ? 'bg-sky-700 text-white border-sky-700'
-              : 'bg-white/95 text-slate-700 border-slate-300 hover:bg-slate-50'
+              ? 'bg-[#3B7E8C] text-white border-[#3B7E8C]'
+              : 'bg-[#122E34]/95 text-[#ABAFB5] border-[#244C56] hover:bg-[#183840]'
           }`}
         >
           <RotateCw className={`w-3.5 h-3.5 ${autoRotate ? 'animate-spin' : ''}`} />
@@ -304,29 +305,29 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
         <button
           onClick={handleResetCamera}
           title="Reset Camera View"
-          className="p-1.5 rounded-lg bg-white/95 text-slate-700 border border-slate-300 hover:bg-slate-50 transition cursor-pointer shadow-xs"
+          className="p-1.5 rounded-lg bg-[#122E34]/95 text-[#ABAFB5] border border-[#244C56] hover:bg-[#183840] transition cursor-pointer shadow-sm"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Bottom Medical Inspection Toolbar */}
-      <div className="absolute bottom-3 inset-x-3 bg-white/95 backdrop-blur-md rounded-lg p-2.5 border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+      <div className="absolute bottom-3 inset-x-3 bg-[#122E34]/95 backdrop-blur-md rounded-lg p-2.5 border border-[#244C56] flex flex-wrap items-center justify-between gap-3 text-xs shadow-md">
         {/* Left: Brain Shell & Opacity */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowBrain(!showBrain)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
               showBrain
-                ? 'bg-slate-100 text-slate-800 border border-slate-300'
-                : 'text-slate-400 line-through'
+                ? 'bg-[#0E1D21] text-[#F1F5F9] border border-[#244C56]'
+                : 'text-[#677E8A] line-through'
             }`}
           >
-            {showBrain ? <Eye className="w-3.5 h-3.5 text-slate-600" /> : <EyeOff className="w-3.5 h-3.5 text-slate-400" />}
+            {showBrain ? <Eye className="w-3.5 h-3.5 text-[#3B7E8C]" /> : <EyeOff className="w-3.5 h-3.5 text-[#677E8A]" />}
             <span>Brain Outline</span>
           </button>
 
-          <div className="flex items-center gap-2 text-slate-600">
+          <div className="flex items-center gap-2 text-[#ABAFB5]">
             <span className="text-[11px] font-medium">Transparency:</span>
             <input
               type="range"
@@ -335,7 +336,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               step="0.05"
               value={brainOpacity}
               onChange={(e) => setBrainOpacity(parseFloat(e.target.value))}
-              className="w-20 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-700"
+              className="w-20 h-1.5 bg-[#0E1D21] rounded-lg appearance-none cursor-pointer accent-[#3B7E8C]"
             />
           </div>
         </div>
@@ -347,8 +348,8 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               onClick={() => setShowWT(!showWT)}
               className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
                 showWT
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : 'text-slate-400 border-slate-200 opacity-60'
+                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800'
+                  : 'text-[#677E8A] border-[#244C56] opacity-60'
               }`}
             >
               WT (Whole)
@@ -357,8 +358,8 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               onClick={() => setShowTC(!showTC)}
               className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
                 showTC
-                  ? 'bg-amber-50 text-amber-800 border-amber-300'
-                  : 'text-slate-400 border-slate-200 opacity-60'
+                  ? 'bg-amber-950/70 text-amber-300 border-amber-800'
+                  : 'text-[#677E8A] border-[#244C56] opacity-60'
               }`}
             >
               TC (Core)
@@ -367,8 +368,8 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               onClick={() => setShowET(!showET)}
               className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition cursor-pointer ${
                 showET
-                  ? 'bg-red-50 text-red-800 border-red-300'
-                  : 'text-slate-400 border-slate-200 opacity-60'
+                  ? 'bg-rose-950/70 text-rose-300 border-rose-800'
+                  : 'text-[#677E8A] border-[#244C56] opacity-60'
               }`}
             >
               ET (Active)
@@ -377,8 +378,8 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
               onClick={() => setWireframe(!wireframe)}
               className={`p-1 rounded text-[11px] border ml-1 ${
                 wireframe
-                  ? 'bg-sky-100 text-sky-800 border-sky-300'
-                  : 'text-slate-500 border-slate-200'
+                  ? 'bg-[#3B7E8C] text-white border-[#3B7E8C]'
+                  : 'text-[#677E8A] border-[#244C56]'
               }`}
               title="Toggle Mesh Wireframe"
             >
@@ -386,7 +387,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 text-[11px] text-slate-700 font-medium">
+          <div className="flex items-center gap-3 text-[11px] text-[#ABAFB5] font-medium">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
               Detected Lesion Area
@@ -397,9 +398,9 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
 
       {/* Loading Overlay */}
       {loading && (
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
-          <div className="w-7 h-7 border-2 border-sky-700 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold text-slate-800">
+        <div className="absolute inset-0 bg-[#0E1D21]/90 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
+          <div className="w-7 h-7 border-2 border-[#3B7E8C] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-[#F1F5F9]">
             Reconstructing 3D Anatomical Surfaces...
           </span>
         </div>

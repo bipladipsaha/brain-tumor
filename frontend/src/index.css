@@ -10,23 +10,23 @@
 
 body {
   margin: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #0E1D21;
+  color: #ABAFB5;
   overflow-x: hidden;
 }
 
-/* Clean Clinical Scrollbar */
+/* Refined Surgical Scrollbar matching ELAN Palette */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #0E1D21;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #244C56;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #677E8A;
 }
