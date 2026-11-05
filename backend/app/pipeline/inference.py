@@ -15,42 +15,59 @@ class BrainTumorInferenceEngine:
     """
     def __init__(self, model_weights_path_3d: Optional[str] = None, model_weights_path_2d: Optional[str] = None):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.model_weights_path_3d = model_weights_path_3d
+        self.model_weights_path_2d = model_weights_path_2d
+        self._model_3d = None
+        self._model_2d = None
         self.weights_loaded_3d = False
         self.weights_loaded_2d = False
         self.roi_size = (128, 128, 128)
         
-        # 1. Instantiate 3D SegResNet
-        self.model_3d = SegResNet(
-            spatial_dims=3,
-            in_channels=4,
-            out_channels=3,
-            init_filters=16,
-            blocks_down=[1, 2, 2, 4],
-            blocks_up=[1, 1, 1],
-            dropout_prob=0.2,
-        ).to(self.device)
-        
-        # 2. Instantiate 2D U-Net (for JPG/PNG photos)
-        self.model_2d = UNet(
-            spatial_dims=2,
-            in_channels=3,
-            out_channels=1,
-            channels=(16, 32, 64, 128, 256),
-            strides=(2, 2, 2, 2),
-            num_res_units=2,
-        ).to(self.device)
-        
-        if model_weights_path_3d and os.path.exists(model_weights_path_3d):
-            self.load_weights_3d(model_weights_path_3d)
-            
-        if model_weights_path_2d and os.path.exists(model_weights_path_2d):
-            self.load_weights_2d(model_weights_path_2d)
-            
+    def _init_model_3d(self):
+        if self._model_3d is None:
+            self._model_3d = SegResNet(
+                spatial_dims=3,
+                in_channels=4,
+                out_channels=3,
+                init_filters=16,
+                blocks_down=[1, 2, 2, 4],
+                blocks_up=[1, 1, 1],
+                dropout_prob=0.2,
+            ).to(self.device)
+
+    def _init_model_2d(self):
+        if self._model_2d is None:
+            self._model_2d = UNet(
+                spatial_dims=2,
+                in_channels=3,
+                out_channels=1,
+                channels=(16, 32, 64, 128, 256),
+                strides=(2, 2, 2, 2),
+                num_res_units=2,
+            ).to(self.device)
+
+    @property
+    def model_3d(self):
+        if self._model_3d is None:
+            self._init_model_3d()
+            if self.model_weights_path_3d and os.path.exists(self.model_weights_path_3d):
+                self.load_weights_3d(self.model_weights_path_3d)
+        return self._model_3d
+
+    @property
+    def model_2d(self):
+        if self._model_2d is None:
+            self._init_model_2d()
+            if self.model_weights_path_2d and os.path.exists(self.model_weights_path_2d):
+                self.load_weights_2d(self.model_weights_path_2d)
+        return self._model_2d
+
     def load_weights_3d(self, weights_path: str):
         try:
+            self._init_model_3d()
             state_dict = torch.load(weights_path, map_location=self.device)
-            self.model_3d.load_state_dict(state_dict)
-            self.model_3d.eval()
+            self._model_3d.load_state_dict(state_dict)
+            self._model_3d.eval()
             self.weights_loaded_3d = True
             print(f"✅ Loaded 3D SegResNet weights from {weights_path}")
         except Exception as e:
@@ -59,9 +76,10 @@ class BrainTumorInferenceEngine:
 
     def load_weights_2d(self, weights_path: str):
         try:
+            self._init_model_2d()
             state_dict = torch.load(weights_path, map_location=self.device)
-            self.model_2d.load_state_dict(state_dict)
-            self.model_2d.eval()
+            self._model_2d.load_state_dict(state_dict)
+            self._model_2d.eval()
             self.weights_loaded_2d = True
             print(f"✅ Loaded 2D U-Net weights from {weights_path}")
         except Exception as e:

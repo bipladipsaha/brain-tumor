@@ -49,6 +49,12 @@ engine = BrainTumorInferenceEngine(
 
 SESSIONS: Dict[str, Dict[str, Any]] = {}
 
+@app.on_event("startup")
+def startup_event():
+    print("🧠 Pre-warming 2D U-Net engine...", flush=True)
+    _ = engine.model_2d
+    print("🚀 NeuroVision 3D Backend is READY and listening on http://127.0.0.1:8001", flush=True)
+
 @app.get("/")
 def root():
     return {
