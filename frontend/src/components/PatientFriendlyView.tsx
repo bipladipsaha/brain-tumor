@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { BrainViewer3D } from './BrainViewer3D';
 import { 
   Upload, FileText, MapPin, Ruler, Stethoscope, CheckCircle2, 
-  Info, Activity, ShieldCheck, HelpCircle, ChevronDown, ChevronUp, AlertCircle 
+  Info, Activity, ShieldCheck, HelpCircle, ChevronDown, ChevronUp 
 } from 'lucide-react';
 
 interface PatientFriendlyViewProps {
@@ -14,7 +14,6 @@ interface PatientFriendlyViewProps {
   onLoadDemo: () => void;
   onDownloadReport: () => void;
   filename?: string;
-  theme?: 'light' | 'dark';
 }
 
 export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
@@ -26,7 +25,6 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
   onLoadDemo,
   onDownloadReport,
   filename,
-  theme = 'dark',
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showChecklist, setShowChecklist] = useState<boolean>(true);
@@ -40,24 +38,23 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
   const friendly = explanation?.friendly_details || {};
   const isDetected = metrics?.tumor_detected;
   const comp = metrics?.tissue_composition || { core_percent: 60, edema_percent: 40 };
-  const rano = metrics?.rano_metrics || {};
   const symptoms = friendly.symptoms_to_monitor || [];
   const questions = friendly.consultation_questions || [];
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       {/* 1. Welcoming Hero Ingestion Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-7 shadow-sm transition-colors">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-7 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="flex flex-col gap-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-sky-700">
               <span className="w-2 h-2 rounded-full bg-sky-500" />
               Patient Consultation & Visual Education
             </div>
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
               Understanding Your Brain Scan in 3D
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-600 leading-relaxed">
               Medical scans can feel overwhelming. This interactive 3D model translates complex multi-slice MRI data into a clear anatomical view so you can easily understand its location, volume, and depth with your physician.
             </p>
           </div>
@@ -84,7 +81,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
             <button
               onClick={onLoadDemo}
               disabled={loading}
-              className="px-5 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="px-5 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               Load Sample Patient Case
             </button>
@@ -92,32 +89,32 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         </div>
 
         {/* Accepted Formats Footer */}
-        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
+        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
           <span>Supported Formats: <strong>DICOM/NIfTI</strong> (.nii, .nii.gz) and <strong>Photographic MRI Slices</strong> (.jpg, .png)</span>
           <span className="text-slate-400">Zero data retention • HIPAA-safe local compute</span>
         </div>
       </div>
 
       {/* 2. Interactive 3D Model Centerpiece */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors">
-        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-slate-900">
               Interactive 3D Brain Anatomy
             </h3>
             {filename && (
-              <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded font-mono border border-slate-200 dark:border-slate-700">
+              <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono border border-slate-200">
                 {filename}
               </span>
             )}
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
+          <span className="text-xs text-slate-500 hidden sm:inline">
             Drag with left mouse to rotate • Scroll to zoom
           </span>
         </div>
 
         <div className="p-3">
-          <BrainViewer3D meshes={meshes} loading={loading} simplifiedMode={true} theme={theme} />
+          <BrainViewer3D meshes={meshes} loading={loading} simplifiedMode={true} />
         </div>
       </div>
 
@@ -125,42 +122,42 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
       {explanation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Card 1: Anatomical Location */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-3 shadow-sm transition-colors">
-            <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400">
-              <div className="p-2 bg-sky-50 dark:bg-sky-950/60 rounded-lg border border-sky-100 dark:border-sky-900">
-                <MapPin className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+          <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm">
+            <div className="flex items-center gap-2 text-sky-600">
+              <div className="p-2 bg-sky-50 rounded-lg border border-sky-100">
+                <MapPin className="w-4 h-4 text-sky-600" />
               </div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Anatomical Location</h4>
+              <h4 className="text-sm font-semibold text-slate-900">Anatomical Location</h4>
             </div>
 
             <div className="flex flex-col gap-1.5 flex-1">
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <div className="text-base font-semibold text-slate-900">
                 {friendly.location_title || 'Identified Region'}
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 {friendly.location_role || 'The scan has identified an area of clinical interest in the specified cranial region.'}
               </p>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
+            <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
               Corresponds with the highlighted spot in the 3D model.
             </div>
           </div>
 
           {/* Card 2: Size & Physical Measurements */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-3 shadow-sm transition-colors">
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-              <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg border border-emerald-100 dark:border-emerald-900">
-                <Ruler className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm">
+            <div className="flex items-center gap-2 text-emerald-600">
+              <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                <Ruler className="w-4 h-4 text-emerald-600" />
               </div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Estimated Size</h4>
+              <h4 className="text-sm font-semibold text-slate-900">Estimated Size</h4>
             </div>
 
             <div className="flex flex-col gap-1.5 flex-1">
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <div className="text-base font-semibold text-slate-900">
                 {friendly.size_comparison || (isDetected ? 'Measurable lesion' : 'No mass effect')}
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
+              <p className="text-xs text-slate-600 leading-relaxed font-mono">
                 Volume: <strong>{metrics?.volumes?.whole_tumor_cm3 || 0} cm³</strong>
                 {metrics?.dimensions_mm && (
                   <span className="block text-[11px] text-slate-500 mt-1">
@@ -170,32 +167,32 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
               </p>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
+            <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
               Calculated via true 3D voxel integration.
             </div>
           </div>
 
           {/* Card 3: Doctor Consultation */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-3 shadow-sm transition-colors">
-            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-              <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg border border-indigo-100 dark:border-indigo-900">
-                <Stethoscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm">
+            <div className="flex items-center gap-2 text-indigo-600">
+              <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100">
+                <Stethoscope className="w-4 h-4 text-indigo-600" />
               </div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Doctor Consultation</h4>
+              <h4 className="text-sm font-semibold text-slate-900">Doctor Consultation</h4>
             </div>
 
             <div className="flex flex-col gap-1.5 flex-1">
-              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <div className="text-base font-semibold text-slate-900">
                 Specialist Evaluation
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-slate-600 leading-relaxed">
                 Take this 3D model and PDF report to your appointment with a neurosurgeon or neuro-oncologist.
               </p>
             </div>
 
             <button
               onClick={onDownloadReport}
-              className="mt-1 w-full py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
+              className="mt-1 w-full py-2 px-3 rounded-lg bg-sky-700 hover:bg-sky-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
             >
               <FileText className="w-3.5 h-3.5" />
               Download Consultation PDF
@@ -204,37 +201,37 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         </div>
       )}
 
-      {/* 4. EXTENSIVE CLINICAL INTELLIGENCE DOSSIER (NEW SECTION!) */}
+      {/* 4. EXTENSIVE CLINICAL INTELLIGENCE DOSSIER */}
       {isDetected && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left Column: Brain Function & Symptoms to Watch (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-5">
             {/* Functional Brain Map & Symptoms */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
-              <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <Activity className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-sky-700 pb-3 border-b border-slate-100">
+                <Activity className="w-4 h-4 text-sky-700" />
+                <h4 className="text-sm font-semibold text-slate-900">
                   Brain Function & Clinical Symptoms to Monitor
                 </h4>
               </div>
 
               <div className="mt-3.5 flex flex-col gap-3">
-                <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900 rounded-lg text-xs">
-                  <span className="font-semibold text-sky-900 dark:text-sky-200">Area Responsibilities: </span>
-                  <span className="text-sky-800 dark:text-sky-300">{friendly.location_role}</span>
+                <div className="p-3 bg-sky-50 border border-sky-100 rounded-lg text-xs">
+                  <span className="font-semibold text-sky-900">Area Responsibilities: </span>
+                  <span className="text-sky-800">{friendly.location_role}</span>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <span className="text-xs font-semibold text-slate-700">
                     Specific Symptoms to Note & Report to Your Care Team:
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                     {symptoms.map((symptom: string, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300"
+                        className="flex items-start gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
                         <span className="leading-snug">{symptom}</span>
                       </div>
                     ))}
@@ -244,29 +241,29 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
             </div>
 
             {/* Understanding Lesions & Fluid Swelling (Demystifying Fear) */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
-              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-indigo-700 pb-3 border-b border-slate-100">
+                <HelpCircle className="w-4 h-4 text-indigo-700" />
+                <h4 className="text-sm font-semibold text-slate-900">
                   Understanding What This Finding Means
                 </h4>
               </div>
 
-              <div className="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed flex flex-col gap-2.5">
+              <div className="mt-3 text-xs text-slate-600 leading-relaxed flex flex-col gap-2.5">
                 <p>
                   {friendly.understanding_lesion}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Benign Tissue</span>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span className="font-semibold text-slate-900 block mb-0.5">Benign Tissue</span>
                     <span className="text-[11px] text-slate-500">Non-cancerous growths, cysts, or calcifications that grow very slowly.</span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Surrounding Swelling</span>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span className="font-semibold text-slate-900 block mb-0.5">Surrounding Swelling</span>
                     <span className="text-[11px] text-slate-500">Fluid buildup (edema) around the core, often treated with medications.</span>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Histopathology</span>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span className="font-semibold text-slate-900 block mb-0.5">Histopathology</span>
                     <span className="text-[11px] text-slate-500">Only a laboratory tissue analysis under a microscope confirms the exact grade.</span>
                   </div>
                 </div>
@@ -277,10 +274,10 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
           {/* Right Column: Tissue Composition & Doctor Checklist (5 Cols) */}
           <div className="lg:col-span-5 flex flex-col gap-5">
             {/* Tissue Subregion Breakdown */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-700 pb-3 border-b border-slate-100">
+                <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                <h4 className="text-sm font-semibold text-slate-900">
                   Tissue Composition Breakdown
                 </h4>
               </div>
@@ -288,13 +285,13 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
               <div className="mt-3 flex flex-col gap-3">
                 {/* Visual Proportion Bar */}
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <div className="flex justify-between text-xs font-medium text-slate-700">
                     <span>Core vs Swelling Ratio</span>
                     <span className="font-mono text-[11px] text-slate-500">
                       Core: {comp.core_percent}% | Edema: {comp.edema_percent}%
                     </span>
                   </div>
-                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
                     <div
                       style={{ width: `${comp.core_percent}%` }}
                       className="bg-amber-500 h-full"
@@ -310,44 +307,44 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
 
                 {/* Subregion stats */}
                 <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60">
-                    <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold mb-0.5">
+                  <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200">
+                    <div className="flex items-center gap-1.5 text-amber-800 font-semibold mb-0.5">
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
                       Tumor Core (TC)
                     </div>
-                    <div className="font-mono text-slate-900 dark:text-slate-100 font-bold">
+                    <div className="font-mono text-slate-900 font-bold">
                       {metrics?.volumes?.tumor_core_cm3 || 0} cm³
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">Central dense lesion</div>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60">
-                    <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-semibold mb-0.5">
+                  <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <div className="flex items-center gap-1.5 text-emerald-800 font-semibold mb-0.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
                       Fluid Edema
                     </div>
-                    <div className="font-mono text-slate-900 dark:text-slate-100 font-bold">
+                    <div className="font-mono text-slate-900 font-bold">
                       {metrics?.volumes?.edema_cm3 || 0} cm³
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">Reactive tissue swelling</div>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/60">
+                <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                   <strong>Clinical Note:</strong> A significant portion of brain MRI volume is often vasogenic fluid swelling rather than actual tumor mass.
                 </div>
               </div>
             </div>
 
             {/* Questions to Ask Doctor Checklist */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
               <div
                 onClick={() => setShowChecklist(!showChecklist)}
-                className="flex items-center justify-between cursor-pointer select-none pb-2 border-b border-slate-100 dark:border-slate-800"
+                className="flex items-center justify-between cursor-pointer select-none pb-2 border-b border-slate-100"
               >
-                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-                  <Stethoscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                <div className="flex items-center gap-2 text-indigo-700">
+                  <Stethoscope className="w-4 h-4 text-indigo-700" />
+                  <h4 className="text-sm font-semibold text-slate-900">
                     Questions for Your Consultation
                   </h4>
                 </div>
@@ -356,14 +353,14 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
 
               {showChecklist && (
                 <div className="mt-3 flex flex-col gap-2">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500">
                     Click each item or bring this list to your appointment:
                   </p>
                   <div className="flex flex-col gap-2">
                     {questions.map((q: string, idx: number) => (
                       <label
                         key={idx}
-                        className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 cursor-pointer transition"
+                        className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 cursor-pointer transition"
                       >
                         <input type="checkbox" className="mt-0.5 accent-sky-600 rounded cursor-pointer" />
                         <span className="leading-snug">{q}</span>
@@ -386,7 +383,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
       )}
 
       {/* 5. Ethical Medical Advisory */}
-      <div className="bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-start gap-3 text-xs text-slate-600 dark:text-slate-400">
+      <div className="bg-slate-100 border border-slate-200 rounded-xl p-4 flex items-start gap-3 text-xs text-slate-600">
         <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
           <strong>Patient Advisory:</strong> NeuroVision 3D is an educational consultation aid. Segmentation boundaries and volume calculations are quantitative estimations generated by deep learning models. Final diagnosis, grading, and management plans must always be confirmed by your licensed neuro-oncology physician.

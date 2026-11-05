@@ -71,7 +71,7 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
 
         if (showOverlay && isTumor) {
           const alpha = overlayOpacity;
-          // Clean surgical coral red
+          // Surgical coral red indicator
           data[idx] = Math.min(255, val * (1 - alpha) + 239 * alpha); // R
           data[idx + 1] = Math.min(255, val * (1 - alpha) + 68 * alpha); // G
           data[idx + 2] = Math.min(255, val * (1 - alpha) + 68 * alpha); // B
@@ -91,18 +91,18 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
   const clampedIndex = Math.min(sliceIndex, Math.max(0, maxSlices - 1));
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-colors">
+    <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3 shadow-sm">
       {/* View Selector & Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <Layers className="w-4 h-4 text-sky-700" />
+          <h3 className="text-sm font-semibold text-slate-900">
             Multi-Planar Reconstruction (MPR)
           </h3>
         </div>
 
         {/* Plane Selector Tabs */}
-        <div className="inline-flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md text-xs border border-slate-200 dark:border-slate-700">
+        <div className="inline-flex bg-slate-100 p-0.5 rounded-md text-xs border border-slate-200">
           {(['axial', 'coronal', 'sagittal'] as const).map((p) => (
             <button
               key={p}
@@ -112,8 +112,8 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
               }}
               className={`px-2.5 py-1 rounded capitalize font-medium transition cursor-pointer ${
                 view === p
-                  ? 'bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-300 shadow-sm font-semibold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-white text-sky-800 shadow-xs font-semibold border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {p}
@@ -123,7 +123,7 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
       </div>
 
       {/* Radiological Canvas Viewport with DICOM Overlay */}
-      <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
+      <div className="relative w-full aspect-square bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
         <canvas ref={canvasRef} className="max-w-full max-h-full object-contain" />
 
         {/* DICOM Radiological Headings */}
@@ -168,22 +168,22 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
 
       {/* Slice Navigation Controls */}
       <div className="flex flex-col gap-2 pt-1">
-        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+        <div className="flex items-center justify-between text-xs text-slate-600">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setSliceIndex(Math.max(0, sliceIndex - 1))}
               disabled={sliceIndex <= 0}
-              className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-30 border border-slate-200 dark:border-slate-700 cursor-pointer"
+              className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 border border-slate-200 cursor-pointer text-slate-700"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+            <span className="font-mono font-medium text-slate-800">
               {clampedIndex + 1} / {maxSlices}
             </span>
             <button
               onClick={() => setSliceIndex(Math.min(maxSlices - 1, sliceIndex + 1))}
               disabled={sliceIndex >= maxSlices - 1}
-              className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-30 border border-slate-200 dark:border-slate-700 cursor-pointer"
+              className="p-1 rounded bg-slate-100 hover:bg-slate-200 disabled:opacity-30 border border-slate-200 cursor-pointer text-slate-700"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -193,10 +193,10 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowOverlay(!showOverlay)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium border transition cursor-pointer ${
                 showOverlay
-                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                  : 'text-slate-400 border-slate-200 dark:border-slate-800'
+                  ? 'bg-rose-50 text-rose-700 border-rose-300 font-semibold'
+                  : 'text-slate-500 border-slate-200'
               }`}
             >
               <Eye className="w-3 h-3" />
@@ -211,7 +211,7 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
                 step="0.05"
                 value={overlayOpacity}
                 onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
-                className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-600"
+                className="w-16 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600"
                 title="Mask Opacity"
               />
             )}
@@ -225,7 +225,7 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
           max={Math.max(0, maxSlices - 1)}
           value={clampedIndex}
           onChange={(e) => setSliceIndex(parseInt(e.target.value))}
-          className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-600"
+          className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-700"
         />
       </div>
     </div>
