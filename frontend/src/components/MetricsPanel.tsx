@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Box, Compass, Maximize, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Activity, Box, Compass, Maximize, AlertCircle, CheckCircle2, Layers, AlertTriangle } from 'lucide-react';
 
 interface MetricsData {
   tumor_detected: boolean;
@@ -8,6 +8,23 @@ interface MetricsData {
     tumor_core_cm3: number;
     enhancing_tumor_cm3: number;
     edema_cm3: number;
+  };
+  tissue_composition?: {
+    enhancing_percent: number;
+    core_percent: number;
+    edema_percent: number;
+    edema_to_core_ratio: number;
+  };
+  rano_metrics?: {
+    longest_diameter_mm: number;
+    perpendicular_diameter_mm: number;
+    bidimensional_product_mm2: number;
+    morphology: string;
+  };
+  structural_impact?: {
+    mass_effect: string;
+    ventricular_compression: string;
+    eloquence_rating: string;
   };
   voxel_counts: {
     whole_tumor: number;
@@ -42,7 +59,7 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics }) => {
     );
   }
 
-  const { volumes, dimensions_mm, centroid_physical_mm, anatomical_location, tumor_detected } = metrics;
+  const { volumes, dimensions_mm, centroid_physical_mm, anatomical_location, tumor_detected, tissue_composition, rano_metrics, structural_impact } = metrics;
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-4 shadow-sm transition-colors">
@@ -51,7 +68,7 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics }) => {
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Quantitative Morphometrics
+            Quantitative Volumetric Morphometrics
           </h3>
         </div>
         <span
@@ -130,13 +147,84 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics }) => {
         </div>
       </div>
 
+      {/* RANO / RECIST 2.0 & Tissue Proportions (Clinician Grade) */}
+      {tissue_composition && (
+        <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200">
+            <div className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              RANO 2.0 / Tissue Proportions
+            </div>
+            <span className="font-mono text-[11px] text-slate-500">
+              Edema/Core Ratio: {tissue_composition.edema_to_core_ratio}:1
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] text-slate-500 block">Longest Diameter</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                {rano_metrics?.longest_diameter_mm || dimensions_mm?.length_x_mm || 0} mm
+              </span>
+            </div>
+            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] text-slate-500 block">Perpendicular Axis</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                {rano_metrics?.perpendicular_diameter_mm || dimensions_mm?.width_y_mm || 0} mm
+              </span>
+            </div>
+            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] text-slate-500 block">Bidimensional (L×W)</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                {rano_metrics?.bidimensional_product_mm2 || 0} mm²
+              </span>
+            </div>
+            <div className="p-2 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] text-slate-500 block">Active Enhancing %</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                {tissue_composition.enhancing_percent}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Structural Compression & Eloquence Risk */}
+      {structural_impact && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+              Mass Effect & Ventricles:
+            </span>
+            <span className="text-slate-800 dark:text-slate-200 font-medium leading-snug block">
+              {structural_impact.mass_effect}
+            </span>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              {structural_impact.ventricular_compression}
+            </span>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-200 dark:border-slate-700/60">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mb-1">
+              Functional Eloquence Rating:
+            </span>
+            <span className="text-slate-800 dark:text-slate-200 font-medium leading-snug block">
+              {structural_impact.eloquence_rating}
+            </span>
+            <span className="text-[11px] text-slate-500 block mt-0.5">
+              Spetzler-Martin / Lacroix surgical risk framework
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Spatial Localization Table */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Spatial Dimensions */}
         <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/70">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
             <Maximize className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-            Physical Dimensions
+            Physical 3D Bounds
           </div>
           {dimensions_mm ? (
             <div className="font-mono text-xs text-slate-800 dark:text-slate-200">

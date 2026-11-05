@@ -113,6 +113,39 @@ def compute_tumor_metrics(
     
     anatomical_desc = f"{hemisphere} Hemisphere, {ant_post}, {sup_inf} region"
     
+    # Advanced Tissue Biomarkers & Percentages
+    safe_wt = max(wt_vol_cm3, 1e-4)
+    et_pct = round(min(100.0, (et_vol_cm3 / safe_wt) * 100.0), 1)
+    tc_pct = round(min(100.0, (tc_vol_cm3 / safe_wt) * 100.0), 1)
+    edema_pct = round(max(0.0, 100.0 - tc_pct), 1)
+    edema_ratio = round(edema_vol_cm3 / max(tc_vol_cm3, 0.05), 2)
+    
+    # RANO / RECIST 2.0 Sizing Metrics
+    dims_sorted = sorted([dim_x_mm, dim_y_mm, dim_z_mm], reverse=True)
+    d_max = dims_sorted[0]
+    d_perp = dims_sorted[1]
+    bidimensional_product = round(d_max * d_perp, 1)
+    
+    # Mass Effect & Structural Compression Assessment
+    if wt_vol_cm3 < 3.0:
+        mass_effect = "Minimal / No mass effect"
+        ventricle_risk = "Normal ventricular configuration"
+    elif wt_vol_cm3 < 15.0:
+        mass_effect = "Mild local sulcal effacement"
+        ventricle_risk = "No significant ventricular compression"
+    elif wt_vol_cm3 < 40.0:
+        mass_effect = "Moderate regional mass effect"
+        ventricle_risk = "Possible ipsilateral lateral ventricle compression"
+    else:
+        mass_effect = "Significant mass effect with local tissue distortion"
+        ventricle_risk = "High risk of lateral ventricular effacement and subfalcine displacement"
+
+    # Functional Eloquence Assessment (Spetzler-Martin classification context)
+    is_eloquent = ("frontal" in anatomical_desc.lower() and "superior" in anatomical_desc.lower()) or \
+                  ("parietal" in anatomical_desc.lower()) or \
+                  ("left" in anatomical_desc.lower() and "anterior" in anatomical_desc.lower())
+    eloquence_rating = "Eloquent Cortex Territory (High Functional Importance)" if is_eloquent else "Near-Eloquent / Associative Cortex"
+
     return {
         "tumor_detected": True,
         "volumes": {
@@ -120,6 +153,23 @@ def compute_tumor_metrics(
             "tumor_core_cm3": tc_vol_cm3,
             "enhancing_tumor_cm3": et_vol_cm3,
             "edema_cm3": edema_vol_cm3,
+        },
+        "tissue_composition": {
+            "enhancing_percent": et_pct,
+            "core_percent": tc_pct,
+            "edema_percent": edema_pct,
+            "edema_to_core_ratio": edema_ratio
+        },
+        "rano_metrics": {
+            "longest_diameter_mm": d_max,
+            "perpendicular_diameter_mm": d_perp,
+            "bidimensional_product_mm2": bidimensional_product,
+            "morphology": "Circumscribed nodular" if edema_ratio < 1.0 else "Infiltrative with peritumoral halo"
+        },
+        "structural_impact": {
+            "mass_effect": mass_effect,
+            "ventricular_compression": ventricle_risk,
+            "eloquence_rating": eloquence_rating
         },
         "voxel_counts": {
             "whole_tumor": wt_voxels,

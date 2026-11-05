@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { BrainViewer3D } from './BrainViewer3D';
-import { Upload, FileText, MapPin, Ruler, Stethoscope, CheckCircle, Info, ArrowUpRight } from 'lucide-react';
+import { 
+  Upload, FileText, MapPin, Ruler, Stethoscope, CheckCircle2, 
+  Info, Activity, ShieldCheck, HelpCircle, ChevronDown, ChevronUp, AlertCircle 
+} from 'lucide-react';
 
 interface PatientFriendlyViewProps {
   meshes: any;
@@ -26,6 +29,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
   theme = 'dark',
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showChecklist, setShowChecklist] = useState<boolean>(true);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -35,10 +39,14 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
 
   const friendly = explanation?.friendly_details || {};
   const isDetected = metrics?.tumor_detected;
+  const comp = metrics?.tissue_composition || { core_percent: 60, edema_percent: 40 };
+  const rano = metrics?.rano_metrics || {};
+  const symptoms = friendly.symptoms_to_monitor || [];
+  const questions = friendly.consultation_questions || [];
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
-      {/* 1. Clinical Welcome & Study Ingestion Card */}
+      {/* 1. Welcoming Hero Ingestion Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-7 shadow-sm transition-colors">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="flex flex-col gap-2 max-w-2xl">
@@ -90,7 +98,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Interactive 3D Model Viewport */}
+      {/* 2. Interactive 3D Model Centerpiece */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm transition-colors">
         <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-2.5">
@@ -113,7 +121,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Plain-Language Clinical Summary Cards */}
+      {/* 3. Primary Plain-English Summary Cards */}
       {explanation && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Card 1: Anatomical Location */}
@@ -135,7 +143,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
-              Corresponds with the amber highlight in the 3D viewer.
+              Corresponds with the highlighted spot in the 3D model.
             </div>
           </div>
 
@@ -150,19 +158,24 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
 
             <div className="flex flex-col gap-1.5 flex-1">
               <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                {friendly.analogy_title || (isDetected ? 'Measurable lesion' : 'No mass effect')}
+                {friendly.size_comparison || (isDetected ? 'Measurable lesion' : 'No mass effect')}
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
-                {friendly.analogy_desc || `Estimated volume: ${metrics?.volumes?.whole_tumor_cm3 || 0} cm³.`}
+                Volume: <strong>{metrics?.volumes?.whole_tumor_cm3 || 0} cm³</strong>
+                {metrics?.dimensions_mm && (
+                  <span className="block text-[11px] text-slate-500 mt-1">
+                    Span: {metrics.dimensions_mm.length_x_mm} × {metrics.dimensions_mm.width_y_mm} × {metrics.dimensions_mm.height_z_mm} mm
+                  </span>
+                )}
               </p>
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500">
-              Calculated via true voxel integration across scanner axes.
+              Calculated via true 3D voxel integration.
             </div>
           </div>
 
-          {/* Card 3: Consultation Preparation */}
+          {/* Card 3: Doctor Consultation */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-3 shadow-sm transition-colors">
             <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
               <div className="p-2 bg-indigo-50 dark:bg-indigo-950/60 rounded-lg border border-indigo-100 dark:border-indigo-900">
@@ -173,10 +186,10 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
 
             <div className="flex flex-col gap-1.5 flex-1">
               <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                Recommended Questions
+                Specialist Evaluation
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Take this 3D model to your appointment. Many detected areas represent benign tissue, fluid collections, or post-inflammatory changes.
+                Take this 3D model and PDF report to your appointment with a neurosurgeon or neuro-oncologist.
               </p>
             </div>
 
@@ -191,7 +204,188 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         </div>
       )}
 
-      {/* 4. Ethical Medical Notice */}
+      {/* 4. EXTENSIVE CLINICAL INTELLIGENCE DOSSIER (NEW SECTION!) */}
+      {isDetected && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Left Column: Brain Function & Symptoms to Watch (7 Cols) */}
+          <div className="lg:col-span-7 flex flex-col gap-5">
+            {/* Functional Brain Map & Symptoms */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
+              <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <Activity className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Brain Function & Clinical Symptoms to Monitor
+                </h4>
+              </div>
+
+              <div className="mt-3.5 flex flex-col gap-3">
+                <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900 rounded-lg text-xs">
+                  <span className="font-semibold text-sky-900 dark:text-sky-200">Area Responsibilities: </span>
+                  <span className="text-sky-800 dark:text-sky-300">{friendly.location_role}</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Specific Symptoms to Note & Report to Your Care Team:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                    {symptoms.map((symptom: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{symptom}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Understanding Lesions & Fluid Swelling (Demystifying Fear) */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <HelpCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Understanding What This Finding Means
+                </h4>
+              </div>
+
+              <div className="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed flex flex-col gap-2.5">
+                <p>
+                  {friendly.understanding_lesion}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Benign Tissue</span>
+                    <span className="text-[11px] text-slate-500">Non-cancerous growths, cysts, or calcifications that grow very slowly.</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Surrounding Swelling</span>
+                    <span className="text-[11px] text-slate-500">Fluid buildup (edema) around the core, often treated with medications.</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <span className="font-semibold text-slate-900 dark:text-white block mb-0.5">Histopathology</span>
+                    <span className="text-[11px] text-slate-500">Only a laboratory tissue analysis under a microscope confirms the exact grade.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Tissue Composition & Doctor Checklist (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            {/* Tissue Subregion Breakdown */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Tissue Composition Breakdown
+                </h4>
+              </div>
+
+              <div className="mt-3 flex flex-col gap-3">
+                {/* Visual Proportion Bar */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <span>Core vs Swelling Ratio</span>
+                    <span className="font-mono text-[11px] text-slate-500">
+                      Core: {comp.core_percent}% | Edema: {comp.edema_percent}%
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                    <div
+                      style={{ width: `${comp.core_percent}%` }}
+                      className="bg-amber-500 h-full"
+                      title={`Tumor Core: ${comp.core_percent}%`}
+                    />
+                    <div
+                      style={{ width: `${comp.edema_percent}%` }}
+                      className="bg-emerald-500 h-full"
+                      title={`Edema (Swelling): ${comp.edema_percent}%`}
+                    />
+                  </div>
+                </div>
+
+                {/* Subregion stats */}
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60">
+                    <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-semibold mb-0.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                      Tumor Core (TC)
+                    </div>
+                    <div className="font-mono text-slate-900 dark:text-slate-100 font-bold">
+                      {metrics?.volumes?.tumor_core_cm3 || 0} cm³
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Central dense lesion</div>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60">
+                    <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-semibold mb-0.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      Fluid Edema
+                    </div>
+                    <div className="font-mono text-slate-900 dark:text-slate-100 font-bold">
+                      {metrics?.volumes?.edema_cm3 || 0} cm³
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Reactive tissue swelling</div>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg border border-slate-200/80 dark:border-slate-700/60">
+                  <strong>Clinical Note:</strong> A significant portion of brain MRI volume is often vasogenic fluid swelling rather than actual tumor mass.
+                </div>
+              </div>
+            </div>
+
+            {/* Questions to Ask Doctor Checklist */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm transition-colors">
+              <div
+                onClick={() => setShowChecklist(!showChecklist)}
+                className="flex items-center justify-between cursor-pointer select-none pb-2 border-b border-slate-100 dark:border-slate-800"
+              >
+                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                  <Stethoscope className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Questions for Your Consultation
+                  </h4>
+                </div>
+                {showChecklist ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+              </div>
+
+              {showChecklist && (
+                <div className="mt-3 flex flex-col gap-2">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Click each item or bring this list to your appointment:
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {questions.map((q: string, idx: number) => (
+                      <label
+                        key={idx}
+                        className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 cursor-pointer transition"
+                      >
+                        <input type="checkbox" className="mt-0.5 accent-sky-600 rounded cursor-pointer" />
+                        <span className="leading-snug">{q}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={onDownloadReport}
+                    className="mt-2 w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Download Complete Patient Report (PDF)
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Ethical Medical Advisory */}
       <div className="bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex items-start gap-3 text-xs text-slate-600 dark:text-slate-400">
         <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
         <p className="leading-relaxed">

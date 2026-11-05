@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCheck, Stethoscope, AlertTriangle, ShieldCheck, Palette, FileText } from 'lucide-react';
+import { UserCheck, Stethoscope, AlertTriangle, ShieldCheck, Palette, Dna, Compass } from 'lucide-react';
 
 interface ExplanationData {
   patient_summary?: string;
@@ -10,6 +10,16 @@ interface ExplanationData {
     hex: string;
     meaning: string;
   }>;
+  clinical_dossier?: {
+    subtype_profile?: string;
+    differential_diagnosis?: string;
+    molecular_recommendations?: Array<{
+      biomarker: string;
+      role: string;
+    }>;
+    surgical_considerations?: string;
+    rano_summary?: string;
+  };
   limitations?: string[];
   disclaimer?: string;
 }
@@ -26,6 +36,8 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ explanation 
   }
 
   const colorGuide = explanation.color_guide || [];
+  const dossier = explanation.clinical_dossier || {};
+  const molecular = dossier.molecular_recommendations || [];
   const limitations = explanation.limitations || [
     "Segmentation boundaries are estimated using deep learning feature representations.",
     "Edema boundaries on FLAIR may encompass both reactive vasogenic edema and microscopic infiltration.",
@@ -39,7 +51,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ explanation 
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Clinical Finding Interpretation
+            Clinical Finding Interpretation & Diagnostic Dossier
           </h3>
         </div>
 
@@ -76,6 +88,60 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ explanation 
           {activeTab === 'clinician' ? explanation.clinician_summary : explanation.patient_summary}
         </p>
       </div>
+
+      {/* Differential Diagnosis & Imaging Profile (Clinician Mode) */}
+      {dossier.differential_diagnosis && (
+        <div className="p-3.5 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/60 text-xs flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
+              <Stethoscope className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              Differential Diagnosis & Phenotypic Pattern
+            </span>
+            {dossier.subtype_profile && (
+              <span className="px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-900/70 text-sky-800 dark:text-sky-300 text-[10px] font-semibold">
+                {dossier.subtype_profile}
+              </span>
+            )}
+          </div>
+          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+            {dossier.differential_diagnosis}
+          </p>
+        </div>
+      )}
+
+      {/* WHO CNS 2021 Molecular Biomarkers Protocol */}
+      {molecular.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <Dna className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            WHO CNS 2021 Recommended Molecular Workup
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {molecular.map((m, idx) => (
+              <div
+                key={idx}
+                className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700/60 flex flex-col gap-0.5"
+              >
+                <span className="font-semibold text-slate-900 dark:text-slate-100 text-[11px]">{m.biomarker}</span>
+                <span className="text-[10px] text-slate-500 leading-tight">{m.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pre-Surgical Neuronavigation & Planning Notes */}
+      {dossier.surgical_considerations && (
+        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 text-xs flex flex-col gap-1">
+          <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            Neuronavigation & Surgical Planning Notes
+          </span>
+          <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
+            {dossier.surgical_considerations}
+          </p>
+        </div>
+      )}
 
       {/* 3D Color Guide Legend */}
       <div className="flex flex-col gap-2">
