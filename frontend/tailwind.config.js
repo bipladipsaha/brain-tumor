@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,15 +8,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        medical: {
-          bg: "#0B0F19",
-          card: "#111827",
-          border: "#1F2937",
-          accent: "#3B82F6",
-          cyan: "#06B6D4",
-          success: "#10B981",
-          warning: "#F59E0B",
-          danger: "#EF4444"
+        clinical: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#075985',
+          900: '#0c4a6e',
         }
       }
     },

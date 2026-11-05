@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layers, Eye, EyeOff, Sliders } from 'lucide-react';
+import { Layers, Eye, EyeOff, Sliders, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SliceViewer2DProps {
   sessionId: string | null;
@@ -7,8 +7,8 @@ interface SliceViewer2DProps {
 
 export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
   const [view, setView] = useState<'axial' | 'coronal' | 'sagittal'>('axial');
-  const [sliceIndex, setSliceIndex] = useState<number>(32);
-  const [maxSlices, setMaxSlices] = useState<number>(64);
+  const [sliceIndex, setSliceIndex] = useState<number>(36);
+  const [maxSlices, setMaxSlices] = useState<number>(72);
   const [showOverlay, setShowOverlay] = useState<boolean>(true);
   const [overlayOpacity, setOverlayOpacity] = useState<number>(0.75);
   const [loading, setLoading] = useState<boolean>(false);
@@ -17,7 +17,7 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
 
   // Reset slice index whenever a new scan is loaded
   useEffect(() => {
-    setSliceIndex(32);
+    setSliceIndex(36);
   }, [sessionId]);
 
   // Fetch slice data from API
@@ -71,10 +71,10 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
 
         if (showOverlay && isTumor) {
           const alpha = overlayOpacity;
-          // Glowing bright coral-red highlight
-          data[idx] = Math.min(255, val * (1 - alpha) + 245 * alpha); // R
-          data[idx + 1] = Math.min(255, val * (1 - alpha) + 50 * alpha); // G
-          data[idx + 2] = Math.min(255, val * (1 - alpha) + 50 * alpha); // B
+          // Clean surgical coral red
+          data[idx] = Math.min(255, val * (1 - alpha) + 239 * alpha); // R
+          data[idx + 1] = Math.min(255, val * (1 - alpha) + 68 * alpha); // G
+          data[idx + 2] = Math.min(255, val * (1 - alpha) + 68 * alpha); // B
           data[idx + 3] = 255;
         } else {
           data[idx] = val;
@@ -91,73 +91,119 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
   const clampedIndex = Math.min(sliceIndex, Math.max(0, maxSlices - 1));
 
   return (
-    <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-3 shadow-sm transition-colors">
       {/* View Selector & Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-blue-400" />
-          <h3 className="text-sm font-semibold text-slate-200">2D Multi-Planar Slice View</h3>
+          <Layers className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Multi-Planar Reconstruction (MPR)
+          </h3>
         </div>
 
-        {/* Plane Selector */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-          {(['axial', 'coronal', 'sagittal'] as const).map((plane) => (
+        {/* Plane Selector Tabs */}
+        <div className="inline-flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-md text-xs border border-slate-200 dark:border-slate-700">
+          {(['axial', 'coronal', 'sagittal'] as const).map((p) => (
             <button
-              key={plane}
+              key={p}
               onClick={() => {
-                setView(plane);
+                setView(p);
                 setSliceIndex(Math.floor(maxSlices / 2));
               }}
-              className={`px-3 py-1 rounded-md font-medium capitalize transition cursor-pointer ${
-                view === plane ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              className={`px-2.5 py-1 rounded capitalize font-medium transition cursor-pointer ${
+                view === p
+                  ? 'bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-300 shadow-sm font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              {plane}
+              {p}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 2D Slice Canvas Display */}
-      <div className="relative aspect-square max-h-[380px] w-full bg-black rounded-lg border border-slate-800 flex items-center justify-center overflow-hidden">
+      {/* Radiological Canvas Viewport with DICOM Overlay */}
+      <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
+        <canvas ref={canvasRef} className="max-w-full max-h-full object-contain" />
+
+        {/* DICOM Radiological Headings */}
+        <div className="absolute top-2 left-2.5 pointer-events-none font-mono text-[10px] text-slate-400/90 leading-tight">
+          <div>SERIES: 01</div>
+          <div className="uppercase">{view} VIEW</div>
+        </div>
+
+        <div className="absolute top-2 right-2.5 pointer-events-none font-mono text-[10px] text-slate-400/90 text-right leading-tight">
+          <div>FOV: 256 mm</div>
+          <div>THK: 1.0 mm</div>
+        </div>
+
+        {/* Anatomical Orientation Watermarks */}
+        <div className="absolute top-1.5 inset-x-0 text-center pointer-events-none text-[10px] font-bold text-slate-500 uppercase">
+          Anterior (A)
+        </div>
+        <div className="absolute bottom-1.5 inset-x-0 text-center pointer-events-none text-[10px] font-bold text-slate-500 uppercase">
+          Posterior (P)
+        </div>
+        <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none text-[10px] font-bold text-slate-500">
+          R
+        </div>
+        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none text-[10px] font-bold text-slate-500">
+          L
+        </div>
+
+        {/* Bottom DICOM Metadata */}
+        <div className="absolute bottom-2 left-2.5 pointer-events-none font-mono text-[10px] text-slate-400/90">
+          W: 1024 L: 512
+        </div>
+        <div className="absolute bottom-2 right-2.5 pointer-events-none font-mono text-[10px] text-emerald-400 font-semibold">
+          Slice: {clampedIndex + 1} / {maxSlices}
+        </div>
+
         {loading && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-            <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-
-        <canvas ref={canvasRef} className="max-h-full max-w-full object-contain" />
-
-        <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-slate-400 bg-black/70 px-1.5 py-0.5 rounded">
-          {view === 'axial' ? 'Anterior (A)' : 'Superior (S)'}
-        </span>
-        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-slate-400 bg-black/70 px-1.5 py-0.5 rounded">
-          {view === 'axial' ? 'Posterior (P)' : 'Inferior (I)'}
-        </span>
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-black/70 px-1.5 py-0.5 rounded">
-          {view === 'sagittal' ? 'Anterior (A)' : 'Right (R)'}
-        </span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-black/70 px-1.5 py-0.5 rounded">
-          {view === 'sagittal' ? 'Posterior (P)' : 'Left (L)'}
-        </span>
       </div>
 
-      {/* Slice Scrubber & Controls */}
-      <div className="flex flex-col gap-2 pt-1 text-xs text-slate-300">
-        <div className="flex items-center justify-between font-mono">
-          <span>Slice: {clampedIndex} / {Math.max(0, maxSlices - 1)}</span>
-          <div className="flex items-center gap-3">
+      {/* Slice Navigation Controls */}
+      <div className="flex flex-col gap-2 pt-1">
+        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setSliceIndex(Math.max(0, sliceIndex - 1))}
+              disabled={sliceIndex <= 0}
+              className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-30 border border-slate-200 dark:border-slate-700 cursor-pointer"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="font-mono font-medium text-slate-800 dark:text-slate-200">
+              {clampedIndex + 1} / {maxSlices}
+            </span>
+            <button
+              onClick={() => setSliceIndex(Math.min(maxSlices - 1, sliceIndex + 1))}
+              disabled={sliceIndex >= maxSlices - 1}
+              className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-30 border border-slate-200 dark:border-slate-700 cursor-pointer"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* AI Mask Overlay Toggle */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowOverlay(!showOverlay)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] border transition cursor-pointer ${
-                showOverlay ? 'bg-red-500/20 text-red-300 border-red-500/40' : 'bg-slate-800 text-slate-500 border-slate-700'
+              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer ${
+                showOverlay
+                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                  : 'text-slate-400 border-slate-200 dark:border-slate-800'
               }`}
             >
-              {showOverlay ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-              AI Mask Overlay
+              <Eye className="w-3 h-3" />
+              <span>AI Mask</span>
             </button>
-            <div className="flex items-center gap-1.5">
-              <Sliders className="w-3 h-3 text-slate-400" />
+
+            {showOverlay && (
               <input
                 type="range"
                 min="0.2"
@@ -165,20 +211,21 @@ export const SliceViewer2D: React.FC<SliceViewer2DProps> = ({ sessionId }) => {
                 step="0.05"
                 value={overlayOpacity}
                 onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
-                className="w-16 accent-red-500 cursor-pointer"
-                title="Overlay Opacity"
+                className="w-16 h-1 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-600"
+                title="Mask Opacity"
               />
-            </div>
+            )}
           </div>
         </div>
 
+        {/* Slice Scrubber Track */}
         <input
           type="range"
           min="0"
           max={Math.max(0, maxSlices - 1)}
           value={clampedIndex}
           onChange={(e) => setSliceIndex(parseInt(e.target.value))}
-          className="w-full accent-blue-500 cursor-pointer"
+          className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-600"
         />
       </div>
     </div>
