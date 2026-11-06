@@ -36,6 +36,7 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
   };
 
   const friendly = explanation?.friendly_details || {};
+  const classification = explanation?.classification;
   const isDetected = metrics?.tumor_detected;
   const comp = metrics?.tissue_composition || { core_percent: 60, edema_percent: 40 };
   const symptoms = friendly.symptoms_to_monitor || [];
@@ -206,6 +207,48 @@ export const PatientFriendlyView: React.FC<PatientFriendlyViewProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* Left Column: Brain Function & Symptoms to Watch (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-5">
+            {/* AI Classification & Characterization Card */}
+            {classification && classification.has_tumor && (
+              <div className="bg-[#122E34] border border-[#244C56] rounded-xl p-5 shadow-md flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-[#244C56]/70 pb-2.5">
+                  <div className="flex items-center gap-2 text-[#3B7E8C]">
+                    <ShieldCheck className="w-4 h-4 text-[#3B7E8C]" />
+                    <h4 className="text-sm font-semibold text-[#F1F5F9]">
+                      AI Finding Characterization & Predicted Type
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#183840] text-[#3B7E8C] border border-[#244C56]">
+                    {(classification.confidence * 100).toFixed(0)}% Likelihood Match
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-bold text-[#F1F5F9]">
+                      {classification.primary_class}
+                    </span>
+                    <span className="text-xs text-amber-300 font-medium px-2 py-0.5 rounded bg-[#0E1D21] border border-amber-900/60">
+                      {classification.who_grade}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#ABAFB5] leading-relaxed">
+                    {classification.patient_note}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="p-2.5 rounded-lg bg-[#0E1D21] border border-[#244C56]">
+                    <span className="text-[10px] text-[#677E8A] block">Origin / Pathway</span>
+                    <span className="text-[#F1F5F9] font-medium">{classification.origin}</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-[#0E1D21] border border-[#244C56]">
+                    <span className="text-[10px] text-[#677E8A] block">Growth Behavior</span>
+                    <span className="text-amber-400 font-medium">{classification.malignancy}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Functional Brain Map & Symptoms */}
             <div className="bg-[#122E34] border border-[#244C56] rounded-xl p-5 shadow-md">
               <div className="flex items-center gap-2 text-[#3B7E8C] pb-3 border-b border-[#244C56]/70">

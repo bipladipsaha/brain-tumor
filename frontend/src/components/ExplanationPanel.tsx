@@ -1,9 +1,23 @@
 import React, { useState } from 'react';
-import { UserCheck, Stethoscope, AlertTriangle, ShieldCheck, Palette, Dna, Compass } from 'lucide-react';
+import { UserCheck, Stethoscope, AlertTriangle, ShieldCheck, Palette, Dna, Compass, Target, Layers, FileCheck } from 'lucide-react';
+
+interface ClassificationData {
+  has_tumor: boolean;
+  primary_class: string;
+  category: string;
+  confidence: number;
+  probabilities: { [key: string]: number };
+  who_grade: string;
+  malignancy: string;
+  origin: string;
+  hallmarks: string[];
+  patient_note: string;
+}
 
 interface ExplanationData {
   patient_summary?: string;
   clinician_summary?: string;
+  classification?: ClassificationData;
   color_guide?: Array<{
     subregion: string;
     color: string;
@@ -35,13 +49,14 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ explanation 
     return null;
   }
 
+  const classification = explanation.classification;
   const colorGuide = explanation.color_guide || [];
   const dossier = explanation.clinical_dossier || {};
   const molecular = dossier.molecular_recommendations || [];
   const limitations = explanation.limitations || [
     "Segmentation boundaries are estimated using deep learning feature representations.",
     "Edema boundaries on FLAIR may encompass both reactive vasogenic edema and microscopic infiltration.",
-    "This model does not establish histopathological tumor grade or cancer diagnosis."
+    "This model provides radiological decision-support; histopathology confirms final WHO CNS 2021 grade."
   ];
 
   return (
@@ -81,6 +96,88 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ explanation 
           </button>
         </div>
       </div>
+
+      {/* 1. NEW: WHO CNS 2021 Tumor Type Classification Card */}
+      {classification && classification.has_tumor && (
+        <div className="p-4 rounded-xl bg-[#0E1D21] border border-[#244C56] flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#244C56]/70 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-[#3B7E8C]" />
+              <span className="text-xs font-semibold text-[#F1F5F9] uppercase tracking-wider">
+                Predicted Tumor Type & Histological Class
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#183840] text-[#3B7E8C] border border-[#244C56]">
+                Confidence: {(classification.confidence * 100).toFixed(0)}%
+              </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-rose-950/70 text-rose-300 border border-rose-800">
+                {classification.who_grade}
+              </span>
+            </div>
+          </div>
+
+          {/* Primary Class Name & Category */}
+          <div className="flex flex-col gap-1">
+            <div className="text-base font-bold text-[#F1F5F9] flex items-center gap-2">
+              <span>{classification.primary_class}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-[#ABAFB5] font-medium">{classification.category}</span>
+              <span className="text-[#677E8A]">•</span>
+              <span className="text-[#677E8A]">{classification.origin}</span>
+              <span className="text-[#677E8A]">•</span>
+              <span className="text-amber-400 font-medium">{classification.malignancy}</span>
+            </div>
+          </div>
+
+          {/* Multi-Class Probability Distribution */}
+          <div className="flex flex-col gap-1.5 pt-1">
+            <span className="text-[11px] font-semibold text-[#677E8A]">
+              Differential Diagnosis Likelihood Breakdown:
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {Object.entries(classification.probabilities).map(([tumorType, prob], idx) => {
+                const pct = (prob * 100).toFixed(0);
+                const isTop = tumorType === classification.primary_class;
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2 rounded-lg border flex flex-col gap-1 transition ${
+                      isTop
+                        ? 'bg-[#183840] border-[#3B7E8C] text-[#F1F5F9]'
+                        : 'bg-[#122E34]/60 border-[#244C56] text-[#ABAFB5]'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="font-medium truncate pr-2">{tumorType}</span>
+                      <span className="font-mono font-bold">{pct}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#0E1D21] rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${pct}%` }}
+                        className={`h-full ${isTop ? 'bg-[#3B7E8C]' : 'bg-[#677E8A]'}`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Radiological Hallmarks */}
+          {classification.hallmarks && classification.hallmarks.length > 0 && (
+            <div className="pt-2 border-t border-[#244C56]/70 flex flex-col gap-1 text-xs">
+              <span className="text-[11px] font-semibold text-[#677E8A]">Radiological Imaging Hallmarks:</span>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-[#ABAFB5]">
+                {classification.hallmarks.map((h, i) => (
+                  <li key={i}>{h}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Structured Clinical Impression Text */}
       <div className="bg-[#0E1D21] p-4 rounded-lg border border-[#244C56]">

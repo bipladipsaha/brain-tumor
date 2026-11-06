@@ -1,4 +1,5 @@
 from typing import Dict, Any, List
+from .classifier import classify_tumor_type
 
 def get_friendly_size_comparison(volume_cm3: float) -> str:
     if volume_cm3 <= 0.1:
@@ -203,9 +204,12 @@ def generate_ai_explanation(metrics: Dict[str, Any]) -> Dict[str, Any]:
         }
     ]
     
+    classification_result = classify_tumor_type(metrics)
+
     return {
         "patient_summary": patient_text,
         "clinician_summary": clinician_text,
+        "classification": classification_result,
         "friendly_details": {
             "headline": "Suspicious Region Identified for Doctor Review",
             "location_title": friendly_loc["simple_title"],
@@ -218,6 +222,7 @@ def generate_ai_explanation(metrics: Dict[str, Any]) -> Dict[str, Any]:
             "status_badge": "Action Needed: Consult Specialist",
             "status_color": "amber",
             "consultation_questions": consultation_questions,
+            "classification": classification_result,
             "understanding_lesion": (
                 "An abnormal spot on an MRI is referred to by doctors as a lesion or space-occupying finding. "
                 "Not all lesions are malignant; many are benign fluid cysts, slow-growing non-cancerous nodules, or "
