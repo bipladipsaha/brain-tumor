@@ -109,6 +109,8 @@ class BrainTumorInferenceEngine:
             
         tensor_in = torch.from_numpy(resized).permute(2, 0, 1).unsqueeze(0).float().to(self.device)
         
+        # Ensure model is initialized and weights are loaded
+        _ = self.model_2d
         if self.weights_loaded_2d:
             with torch.no_grad():
                 pred = self.model_2d(tensor_in)
@@ -130,6 +132,8 @@ class BrainTumorInferenceEngine:
         if mri_volume_4ch.ndim == 3:
             mri_volume_4ch = np.stack([mri_volume_4ch] * 4, axis=0)
             
+        # Ensure 3D model is initialized and weights are loaded
+        _ = self.model_3d
         if self.weights_loaded_3d:
             input_tensor = torch.from_numpy(mri_volume_4ch).unsqueeze(0).float().to(self.device)
             with torch.no_grad():

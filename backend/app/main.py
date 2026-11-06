@@ -158,24 +158,32 @@ async def upload_and_analyze(file: UploadFile = File(...)):
             vol_tumor_et = np.zeros((H, W, D), dtype=np.float32)
             
             if np.any(pred_2d_masked):
+                area_px = float(np.sum(pred_2d_masked))
+                equiv_r = np.sqrt(area_px / np.pi)
+                # Extrude smoothly along Z in proportion to its 2D radius (guarantee at least 5 slices for 3D closure)
+                span_z = int(np.clip(equiv_r * 0.85, 5, 14))
                 mid_z = D // 2
-                span_z = 8
+                
+                lesion_base = ndimage.binary_fill_holes(pred_2d_masked)
+                
                 for z in range(D):
                     dz = abs(z - mid_z)
                     if dz <= span_z:
-                        r = np.sqrt(max(0.0, 1.0 - (dz / (span_z + 1.0)) ** 2))
-                        if dz == 0:
-                            current_mask = pred_2d_masked
+                        norm_d = dz / (span_z + 1.0)
+                        r = np.sqrt(max(0.0, 1.0 - norm_d ** 2))
+                        scale_factor = float(np.clip(r, 0.35, 1.0))
+                        
+                        if dz == 0 or scale_factor >= 0.95:
+                            current_mask = lesion_base.astype(np.float32)
                         else:
-                            erode_iters = int((1.0 - r) * 3)
-                            if erode_iters > 0:
-                                current_mask = ndimage.binary_erosion(pred_2d_masked, iterations=erode_iters)
-                            else:
-                                current_mask = pred_2d_masked
-                        vol_tumor_wt[:, :, z] = current_mask.astype(np.float32)
-                        tc_eroded = ndimage.binary_erosion(current_mask, iterations=1) if np.sum(current_mask) > 50 else current_mask
-                        vol_tumor_tc[:, :, z] = tc_eroded.astype(np.float32)
-                        vol_tumor_et[:, :, z] = tc_eroded.astype(np.float32)
+                            erode_iters = max(1, int((1.0 - scale_factor) * max(1, int(equiv_r * 0.35))))
+                            eroded = ndimage.binary_erosion(lesion_base, iterations=erode_iters)
+                            current_mask = eroded.astype(np.float32) if np.any(eroded) else lesion_base.astype(np.float32) * scale_factor
+                            
+                        vol_tumor_wt[:, :, z] = current_mask
+                        tc_mask = ndimage.binary_erosion(current_mask > 0.5, iterations=1) if np.sum(current_mask) > 40 else current_mask
+                        vol_tumor_tc[:, :, z] = tc_mask.astype(np.float32)
+                        vol_tumor_et[:, :, z] = tc_mask.astype(np.float32)
                             
             pred_mask = np.stack([vol_tumor_wt, vol_tumor_tc, vol_tumor_et], axis=0)
             

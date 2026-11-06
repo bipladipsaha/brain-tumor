@@ -33,10 +33,10 @@ export interface ColorPreset {
 
 export const TUMOR_COLOR_PRESETS: ColorPreset[] = [
   { id: 'amber', name: 'Amber Gold', hex: '#F59E0B', colorValue: 0xF59E0B, emissive: 0x332000 },
+  { id: 'rose', name: 'Blush Mauve', hex: '#E0B4B2', colorValue: 0xE0B4B2, emissive: 0x241414 },
   { id: 'coral', name: 'Sunset Coral', hex: '#F97316', colorValue: 0xF97316, emissive: 0x331400 },
   { id: 'ruby', name: 'Ruby Crimson', hex: '#F43F5E', colorValue: 0xF43F5E, emissive: 0x330010 },
   { id: 'cyan', name: 'Electric Cyan', hex: '#06B6D4', colorValue: 0x06B6D4, emissive: 0x00242B },
-  { id: 'violet', name: 'Amethyst Violet', hex: '#A855F7', colorValue: 0xA855F7, emissive: 0x220033 },
   { id: 'emerald', name: 'Surgical Emerald', hex: '#10B981', colorValue: 0x10B981, emissive: 0x002615 },
 ];
 
@@ -53,7 +53,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
   
   // UI controls
   const [showBrain, setShowBrain] = useState(true);
-  const [brainOpacity, setBrainOpacity] = useState(0.24);
+  const [brainOpacity, setBrainOpacity] = useState(simplifiedMode ? 0.18 : 0.22);
   const [showWT, setShowWT] = useState(true);
   const [showTC, setShowTC] = useState(true);
   const [showET, setShowET] = useState(true);
@@ -196,7 +196,7 @@ export const BrainViewer3D: React.FC<BrainViewer3DProps> = ({
         metalness: 0.1,
         clearcoat: 1.0,
         clearcoatRoughness: 0.1,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
         depthWrite: false,
         wireframe: wireframe,
       });

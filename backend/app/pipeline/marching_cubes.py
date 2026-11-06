@@ -15,7 +15,8 @@ def extract_mesh_marching_cubes(
     """
     Fast, optimized Marching Cubes extraction for WebGL 60 FPS.
     """
-    if not np.any(binary_mask):
+    voxel_sum = np.sum(binary_mask)
+    if voxel_sum == 0:
         return {
             "vertices": [],
             "faces": [],
@@ -26,25 +27,40 @@ def extract_mesh_marching_cubes(
         }
         
     try:
-        # Smooth mask slightly
-        smoothed = ndimage.gaussian_filter(binary_mask.astype(np.float32), sigma=0.6)
+        # Adapt step size: for smaller focal lesions, step_size=1 prevents mesh dropout
+        effective_step = 1 if voxel_sum < 6000 else step_size
+        smoothed = ndimage.gaussian_filter(binary_mask.astype(np.float32), sigma=0.8)
+        
+        # Adaptive level: if thin mask, use 0.35 level to guarantee mesh closure
+        eff_level = 0.35 if voxel_sum < 1000 else level
+        
         verts, faces, normals, _ = measure.marching_cubes(
             smoothed,
-            level=level,
+            level=eff_level,
             spacing=spacing,
-            step_size=step_size,
+            step_size=effective_step,
             allow_degenerate=False
         )
     except Exception as e:
-        return {
-            "vertices": [],
-            "faces": [],
-            "normals": [],
-            "vertex_count": 0,
-            "face_count": 0,
-            "error": str(e),
-            "empty": True
-        }
+        # Fallback with step_size=1 and lower iso-level
+        try:
+            verts, faces, normals, _ = measure.marching_cubes(
+                binary_mask.astype(np.float32),
+                level=0.25,
+                spacing=spacing,
+                step_size=1,
+                allow_degenerate=False
+            )
+        except Exception:
+            return {
+                "vertices": [],
+                "faces": [],
+                "normals": [],
+                "vertex_count": 0,
+                "face_count": 0,
+                "error": str(e),
+                "empty": True
+            }
 
     mesh = trimesh.Trimesh(vertices=verts, faces=faces, vertex_normals=normals, process=False)
     
@@ -82,8 +98,11 @@ def extract_brain_and_tumor_surfaces(
     
     # 1. Brain Envelope Extraction
     mri_norm = (mri_volume - np.min(mri_volume)) / (np.max(mri_volume) - np.min(mri_volume) + 1e-8)
-    brain_mask = mri_norm > 0.10
+    brain_mask = mri_norm > 0.08
     brain_mask = ndimage.binary_closing(brain_mask, iterations=2)
+    # Fill holes slice-by-slice along Z to ensure solid anatomical cranial vault
+    for z in range(brain_mask.shape[2]):
+        brain_mask[:, :, z] = ndimage.binary_fill_holes(brain_mask[:, :, z])
     brain_mask = ndimage.binary_fill_holes(brain_mask)
     
     brain_mesh = extract_mesh_marching_cubes(

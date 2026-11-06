@@ -21,11 +21,17 @@ def generate_synthetic_brain_mri(
     D, H, W = shape
     z, y, x = np.ogrid[:D, :H, :W]
     
-    # 1. Realistic Brain Ellipsoid
+    # 1. Realistic Brain Anatomical Geometry (with Sagittal Fissure & Lobar Curvatures)
     center_brain = (D // 2, H // 2, W // 2)
     rx, ry, rz = W * 0.42, H * 0.40, D * 0.38
     dist_brain = ((x - center_brain[2]) / rx) ** 2 + ((y - center_brain[1]) / ry) ** 2 + ((z - center_brain[0]) / rz) ** 2
-    brain_parenchyma = dist_brain <= 1.0
+    
+    # Interhemispheric (sagittal) groove dividing left and right hemispheres
+    sagittal_groove = 0.10 * np.exp(-((x - center_brain[2]) ** 2) / 18.0)
+    # Temporal indentation
+    temporal_indent = 0.06 * np.exp(-((y - center_brain[1]) ** 2) / 80.0) * (z < center_brain[0])
+    
+    brain_parenchyma = (dist_brain + sagittal_groove + temporal_indent) <= 1.0
     
     # Add gyri/sulci structural textures
     noise = np.random.normal(0.5, 0.08, shape)
